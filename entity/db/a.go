@@ -13,8 +13,9 @@ type Client interface {
 	) error
 	GetGeoLocationsIncludedByCells(
 		ctx context.Context,
-		cellTokenIDs []string,
-		locs *[]*model.GeoLocation,
+		level int,
+		cellIDs *[]string,
+		values *[]*model.GeoLocation,
 	) error
 	Close() error
 }

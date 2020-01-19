@@ -7,6 +7,7 @@ import (
 	"cloud.google.com/go/firestore"
 	"github.com/suzuito/wikipedia-on-map-go/entity/model"
 	"github.com/suzuito/wikipedia-on-map-go/werror"
+	"google.golang.org/api/iterator"
 )
 
 var (
@@ -63,14 +64,38 @@ func (c *ClientFirestore) SetGeoLocations(
 	return nil
 }
 
-func (c *ClientFirestore) Close() error {
-	return c.cli.Close()
-}
-
 func (c *ClientFirestore) GetGeoLocationsIncludedByCells(
 	ctx context.Context,
-	cellTokenIDs []string,
-	locs *[]*model.GeoLocation,
+	level int,
+	cellIDs *[]string,
+	values *[]*model.GeoLocation,
 ) error {
+	crefCell := c.cli.
+		Collection(GeoLocationLevelCol).
+		Doc(strconv.Itoa(level)).
+		Collection(GeoLocationCellCol)
+	for _, cellID := range *cellIDs {
+		drefCell := crefCell.Doc(cellID)
+		crefLoc := drefCell.Collection(GeoLocationCol)
+		iter := crefLoc.Documents(ctx)
+		for {
+			doc, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return werror.New(err)
+			}
+			loc := model.GeoLocation{}
+			if err := doc.DataTo(&loc); err != nil {
+				return werror.New(err)
+			}
+			*values = append(*values, &loc)
+		}
+	}
 	return nil
+}
+
+func (c *ClientFirestore) Close() error {
+	return c.cli.Close()
 }

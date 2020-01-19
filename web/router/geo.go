@@ -16,18 +16,10 @@ import (
 func GetGeoLocations(app application.Application) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", -1)
-			lng := QueryFloat64(ctx, "lng", -1)
+			lat := QueryFloat64(ctx, "lat", 0)
+			lng := QueryFloat64(ctx, "lng", 0)
 			radius := QueryFloat64(ctx, "radius", 10)
-			if lat < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lat", nil))
-				return nil
-			}
-			if lng < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lng", nil))
-				return nil
-			}
-			cells := geo.GetConvexCellsByLatLng(
+			_, cells := geo.GetConvexCellsByLatLng2(
 				lat, lng,
 				app.IndexLevel(),
 				radius,
@@ -39,7 +31,8 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 			locs := []*model.GeoLocation{}
 			if err := dcli.GetGeoLocationsIncludedByCells(
 				ctx,
-				cellTokenIDs,
+				app.IndexLevel(),
+				&cellTokenIDs,
 				&locs,
 			); err != nil {
 				web.Abort(ctx, web.NewHTTPError(500, err.Error(), err))
@@ -54,35 +47,15 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 func GetGeoCap(app application.Application) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", -1)
-			lng := QueryFloat64(ctx, "lng", -1)
+			lat := QueryFloat64(ctx, "lat", 0)
+			lng := QueryFloat64(ctx, "lng", 0)
 			radius := QueryFloat64(ctx, "radius", 10)
-			if lat < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lat", nil))
-				return nil
-			}
-			if lng < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lng", nil))
-				return nil
-			}
-			cells := geo.NewCellsFromS2Cells(
-				geo.GetConvexCellsByLatLng(
-					lat,
-					lng,
-					app.IndexLevel(),
-					radius,
+			cap := wmodel.NewCap(
+				geo.NewCapFromS2Cap(
+					geo.GetCap(lat, lng, radius),
 				),
 			)
-			respCells := []*wmodel.Cell{}
-			for _, cell := range *cells {
-				respCells = append(
-					respCells,
-					wmodel.NewCell(
-						cell,
-					),
-				)
-			}
-			ctx.JSON(http.StatusOK, respCells)
+			ctx.JSON(http.StatusOK, cap)
 			return nil
 		}, nil)
 	}
@@ -91,35 +64,20 @@ func GetGeoCap(app application.Application) func(*gin.Context) {
 func GetGeoCellsConvex(app application.Application) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", -1)
-			lng := QueryFloat64(ctx, "lng", -1)
+			lat := QueryFloat64(ctx, "lat", 0)
+			lng := QueryFloat64(ctx, "lng", 0)
 			radius := QueryFloat64(ctx, "radius", 10)
-			if lat < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lat", nil))
-				return nil
-			}
-			if lng < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lng", nil))
-				return nil
-			}
-			cells := geo.NewCellsFromS2Cells(
-				geo.GetConvexCellsByLatLng(
-					lat,
-					lng,
-					app.IndexLevel(),
-					radius,
-				),
+			_, cellsResp := geo.GetConvexCellsByLatLng2(
+				lat, lng,
+				app.IndexLevel(), radius,
 			)
-			respCells := []*wmodel.Cell{}
-			for _, cell := range *cells {
-				respCells = append(
-					respCells,
-					wmodel.NewCell(
-						cell,
-					),
-				)
-			}
-			ctx.JSON(http.StatusOK, respCells)
+			mcells := geo.NewCellsFromS2Cells(
+				cellsResp,
+			)
+			ctx.JSON(
+				http.StatusOK,
+				wmodel.NewCells(mcells),
+			)
 			return nil
 		}, nil)
 	}
@@ -128,16 +86,8 @@ func GetGeoCellsConvex(app application.Application) func(*gin.Context) {
 func GetGeoCellsChildren(app application.Application) func(*gin.Context) {
 	return func(ctx *gin.Context) {
 		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", -1)
-			lng := QueryFloat64(ctx, "lng", -1)
-			if lat < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lat", nil))
-				return nil
-			}
-			if lng < 0 {
-				web.Abort(ctx, web.NewHTTPError(http.StatusBadRequest, "Set positive float value as lng", nil))
-				return nil
-			}
+			lat := QueryFloat64(ctx, "lat", 0)
+			lng := QueryFloat64(ctx, "lng", 0)
 			cells := geo.NewCellsFromS2Cells(
 				geo.GetCellChildren(lat, lng, app.IndexLevel()),
 			)

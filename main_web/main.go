@@ -52,6 +52,8 @@ func geo(app application.Application, root *gin.Engine) {
 	groupGeo := root.Group("geo")
 	groupGeo.GET("cells/children", router.GetGeoCellsChildren(app))
 	groupGeo.GET("cells/convex", router.GetGeoCellsConvex(app))
+	groupGeo.GET("caps", router.GetGeoCap(app))
+	groupGeo.GET("locations", router.GetGeoLocations(app))
 }
 
 func usecors(app *ApplicationWeb, root *gin.Engine) {
