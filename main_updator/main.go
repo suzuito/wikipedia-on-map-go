@@ -57,7 +57,7 @@ func main() {
 		var lat = float64(0)
 		var lng = float64(0)
 		fmt.Sscanf(fieldCoord, "%f %f", &lat, &lng)
-		cell := geo.GetCell(lat, lng, 20)
+		cell := geo.GetCell(lat, lng, app.ApplicationBase.IndexLevel())
 		gloc := model.NewGeoLocation(
 			name,
 			lat,
@@ -66,7 +66,7 @@ func main() {
 		)
 		glocs = append(glocs, gloc)
 	}
-	if err := cli.SetGeoLocations(ctx, 15, &glocs); err != nil {
+	if err := cli.SetGeoLocations(ctx, app.ApplicationBase.IndexLevel(), &glocs); err != nil {
 		panic(err)
 	}
 }

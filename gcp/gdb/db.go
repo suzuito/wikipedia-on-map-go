@@ -6,7 +6,6 @@ import (
 
 	"cloud.google.com/go/firestore"
 	"github.com/suzuito/wikipedia-on-map-go/entity/model"
-	"github.com/suzuito/wikipedia-on-map-go/gcp/db"
 	"github.com/suzuito/wikipedia-on-map-go/werror"
 )
 
@@ -47,7 +46,7 @@ func (c *ClientFirestore) SetGeoLocations(
 		drefGeo := drefCell.Doc(value.ID)
 		batch.Set(
 			drefGeo,
-			db.NewGeoLocationFromGeoLocation(value),
+			NewGeoLocationFromGeoLocation(value),
 		)
 		i++
 		if i >= max {
@@ -61,5 +60,17 @@ func (c *ClientFirestore) SetGeoLocations(
 	if _, err := batch.Commit(ctx); err != nil {
 		return werror.New(err)
 	}
+	return nil
+}
+
+func (c *ClientFirestore) Close() error {
+	return c.cli.Close()
+}
+
+func (c *ClientFirestore) GetGeoLocationsIncludedByCells(
+	ctx context.Context,
+	cellTokenIDs []string,
+	locs *[]*model.GeoLocation,
+) error {
 	return nil
 }

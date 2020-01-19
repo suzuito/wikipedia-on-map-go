@@ -7,10 +7,11 @@ import (
 	"github.com/suzuito/wikipedia-on-map-go/application"
 	"github.com/suzuito/wikipedia-on-map-go/entity/db"
 	"github.com/suzuito/wikipedia-on-map-go/gcp/gdb"
+	"github.com/suzuito/wikipedia-on-map-go/slogger"
 )
 
 type ApplicationGCP struct {
-	application.ApplicationBase
+	*application.ApplicationBase
 	appFirebase *firebase.App
 }
 
@@ -20,7 +21,7 @@ func NewApplicationGCP(ctx context.Context) (*ApplicationGCP, error) {
 	if err != nil {
 		return nil, err
 	}
-	app.ApplicationBase = *appBase
+	app.ApplicationBase = appBase
 	appFirebase, err := firebase.NewApp(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -35,4 +36,7 @@ func (a *ApplicationGCP) DBClient(ctx context.Context) (db.Client, error) {
 		return nil, err
 	}
 	return gdb.NewClientFirestore(cli), nil
+}
+func (a *ApplicationGCP) Logger(ctx context.Context) slogger.Logger {
+	return &slogger.LoggerPrint{}
 }
