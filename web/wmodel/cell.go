@@ -71,3 +71,30 @@ func NewCap(c *model.Cap) *Cap {
 		Radius: c.Radius,
 	}
 }
+
+// GeoLocation ...
+type GeoLocation struct {
+	ID          string  `json:"id"`
+	Latitude    float64 `json:"latitude"`
+	Longitude   float64 `json:"longitude"`
+	Name        string  `json:"name"`
+	CellIDToken string  `json:"cellIdToken"`
+}
+
+func NewGeoLocation(g *model.GeoLocation) *GeoLocation {
+	return &GeoLocation{
+		ID:          g.ID,
+		Latitude:    g.Latitude,
+		Longitude:   g.Longitude,
+		Name:        g.Name,
+		CellIDToken: g.CellIDToken,
+	}
+}
+
+func NewGeoLocations(gs *[]*model.GeoLocation) *[]*GeoLocation {
+	ret := []*GeoLocation{}
+	for _, g := range *gs {
+		ret = append(ret, NewGeoLocation(g))
+	}
+	return &ret
+}

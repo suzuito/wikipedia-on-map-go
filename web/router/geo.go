@@ -38,7 +38,7 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 				web.Abort(ctx, web.NewHTTPError(500, err.Error(), err))
 				return err
 			}
-			ctx.JSON(http.StatusOK, locs)
+			ctx.JSON(http.StatusOK, wmodel.NewGeoLocations(&locs))
 			return nil
 		}, nil)
 	}
