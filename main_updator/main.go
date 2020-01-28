@@ -8,10 +8,35 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/suzuito/common-go/clogger"
 	"github.com/suzuito/wikipedia-on-map-go/entity/model"
-	"github.com/suzuito/wikipedia-on-map-go/gcp"
+	"github.com/suzuito/wikipedia-on-map-go/gcp/gdb"
 	"github.com/suzuito/wikipedia-on-map-go/geo"
+	"github.com/suzuito/wikipedia-on-map-go/web"
 )
+
+type Application interface {
+	web.ApplicationWeb
+}
+
+type ApplicationImpl struct {
+	*web.ApplicationWebImpl
+}
+
+func NewApplicationImpl(ctx context.Context) (*ApplicationImpl, error) {
+	appWeb, err := web.NewApplicationWebImpl(ctx)
+	if err != nil {
+		return nil, err
+	}
+	app := ApplicationImpl{
+		ApplicationWebImpl: appWeb,
+	}
+	return &app, nil
+}
+
+func (a *ApplicationImpl) Logger(ctx context.Context) clogger.Logger {
+	return &clogger.LoggerPrint{}
+}
 
 var splitter = regexp.MustCompile(`<.*?>`)
 var extractorCoord = regexp.MustCompile(`point> "(.*?)" <`)
@@ -31,14 +56,15 @@ func extract(s string, r *regexp.Regexp) string {
 
 func main() {
 	ctx := context.Background()
-	app, err := gcp.NewApplicationGCP(ctx)
+	app, err := NewApplicationImpl(ctx)
 	if err != nil {
 		panic(err)
 	}
-	cli, err := app.DBClient(ctx)
+	fcli, err := app.AppFirebase().Firestore(ctx)
 	if err != nil {
 		panic(err)
 	}
+	cli := gdb.NewClientFirestore(fcli)
 	glocs := []*model.GeoLocation{}
 	stdin := bufio.NewScanner(os.Stdin)
 	for stdin.Scan() {
@@ -57,7 +83,7 @@ func main() {
 		var lat = float64(0)
 		var lng = float64(0)
 		fmt.Sscanf(fieldCoord, "%f %f", &lat, &lng)
-		cell := geo.GetCell(lat, lng, app.ApplicationBase.IndexLevel())
+		cell := geo.GetCell(lat, lng, app.IndexLevel())
 		gloc := model.NewGeoLocation(
 			name,
 			lat,
@@ -66,7 +92,7 @@ func main() {
 		)
 		glocs = append(glocs, gloc)
 	}
-	if err := cli.SetGeoLocations(ctx, app.ApplicationBase.IndexLevel(), &glocs); err != nil {
+	if err := cli.SetGeoLocations(ctx, app.IndexLevel(), &glocs); err != nil {
 		panic(err)
 	}
 }

@@ -3,38 +3,40 @@ package main
 import (
 	"context"
 	"os"
-	"strings"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/suzuito/wikipedia-on-map-go/application"
-	"github.com/suzuito/wikipedia-on-map-go/gcp"
+	"github.com/suzuito/common-go/clogger"
+	"github.com/suzuito/wikipedia-on-map-go/web"
 	"github.com/suzuito/wikipedia-on-map-go/web/router"
 )
 
-type ApplicationWeb struct {
-	*gcp.ApplicationGCP
+type Application interface {
+	web.ApplicationWeb
 }
 
-func NewApplicationWeb(ctx context.Context) (*ApplicationWeb, error) {
-	appGcp, err := gcp.NewApplicationGCP(ctx)
+type ApplicationImpl struct {
+	*web.ApplicationWebImpl
+}
+
+func NewApplicationImpl(ctx context.Context) (*ApplicationImpl, error) {
+	appWeb, err := web.NewApplicationWebImpl(ctx)
 	if err != nil {
 		return nil, err
 	}
-	app := ApplicationWeb{
-		ApplicationGCP: appGcp,
+	app := ApplicationImpl{
+		ApplicationWebImpl: appWeb,
 	}
 	return &app, nil
 }
 
-// AllowedOrigins ...
-func (a *ApplicationWeb) AllowedOrigins() []string {
-	return strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
+func (a *ApplicationImpl) Logger(ctx context.Context) clogger.Logger {
+	return &clogger.LoggerPrint{}
 }
 
 func main() {
 	ctx := context.Background()
-	app, err := NewApplicationWeb(ctx)
+	app, err := NewApplicationImpl(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -45,10 +47,16 @@ func main() {
 	root.Use(gin.Recovery())
 	usecors(app, root)
 	geo(app, root)
+	s2geo(app, root)
 	root.Run()
 }
 
-func geo(app application.Application, root *gin.Engine) {
+func s2geo(app Application, root *gin.Engine) {
+	s2g := root.Group("s2")
+	s2g.GET("face/:faceID", router.GetCellFromFace(app))
+}
+
+func geo(app Application, root *gin.Engine) {
 	groupGeo := root.Group("geo")
 	groupGeo.GET("cells/children", router.GetGeoCellsChildren(app))
 	groupGeo.GET("cells/convex", router.GetGeoCellsConvex(app))
@@ -56,7 +64,7 @@ func geo(app application.Application, root *gin.Engine) {
 	groupGeo.GET("locations", router.GetGeoLocations(app))
 }
 
-func usecors(app *ApplicationWeb, root *gin.Engine) {
+func usecors(app Application, root *gin.Engine) {
 	root.Use(cors.New(cors.Config{
 		AllowOrigins:     app.AllowedOrigins(),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},

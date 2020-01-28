@@ -3,22 +3,24 @@ package router
 import (
 	"net/http"
 
+	"cloud.google.com/go/firestore"
 	"github.com/gin-gonic/gin"
-	"github.com/suzuito/wikipedia-on-map-go/application"
-	"github.com/suzuito/wikipedia-on-map-go/entity/db"
+	"github.com/suzuito/common-go/cgcp/cweb"
+	"github.com/suzuito/common-go/cgin"
+	"github.com/suzuito/common-go/clogger"
 	"github.com/suzuito/wikipedia-on-map-go/entity/model"
+	"github.com/suzuito/wikipedia-on-map-go/gcp/gdb"
 	"github.com/suzuito/wikipedia-on-map-go/geo"
-	"github.com/suzuito/wikipedia-on-map-go/slogger"
 	"github.com/suzuito/wikipedia-on-map-go/web"
 	"github.com/suzuito/wikipedia-on-map-go/web/wmodel"
 )
 
-func GetGeoLocations(app application.Application) func(*gin.Context) {
+func GetGeoLocations(app web.ApplicationWeb) func(*gin.Context) {
 	return func(ctx *gin.Context) {
-		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", 0)
-			lng := QueryFloat64(ctx, "lng", 0)
-			radius := QueryFloat64(ctx, "radius", 10)
+		cweb.H(app, ctx, func(logger clogger.Logger, fcli *firestore.Client) error {
+			lat := cgin.DefaultQueryAsFloat64(ctx, "lat", 0)
+			lng := cgin.DefaultQueryAsFloat64(ctx, "lng", 0)
+			radius := cgin.DefaultQueryAsFloat64(ctx, "radius", 10)
 			_, cells := geo.GetConvexCellsByLatLng2(
 				lat, lng,
 				app.IndexLevel(),
@@ -28,6 +30,7 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 			for _, cell := range *cells {
 				cellTokenIDs = append(cellTokenIDs, cell.ID().ToToken())
 			}
+			dcli := gdb.NewClientFirestore(fcli)
 			locs := []*model.GeoLocation{}
 			if err := dcli.GetGeoLocationsIncludedByCells(
 				ctx,
@@ -35,7 +38,7 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 				&cellTokenIDs,
 				&locs,
 			); err != nil {
-				web.Abort(ctx, web.NewHTTPError(500, err.Error(), err))
+				cweb.Abort(ctx, cweb.NewHTTPError(500, err.Error(), err))
 				return err
 			}
 			ctx.JSON(http.StatusOK, wmodel.NewGeoLocations(&locs))
@@ -44,12 +47,12 @@ func GetGeoLocations(app application.Application) func(*gin.Context) {
 	}
 }
 
-func GetGeoCap(app application.Application) func(*gin.Context) {
+func GetGeoCap(app web.ApplicationWeb) func(*gin.Context) {
 	return func(ctx *gin.Context) {
-		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", 0)
-			lng := QueryFloat64(ctx, "lng", 0)
-			radius := QueryFloat64(ctx, "radius", 10)
+		cweb.H(app, ctx, func(logger clogger.Logger, fcli *firestore.Client) error {
+			lat := cgin.DefaultQueryAsFloat64(ctx, "lat", 0)
+			lng := cgin.DefaultQueryAsFloat64(ctx, "lng", 0)
+			radius := cgin.DefaultQueryAsFloat64(ctx, "radius", 10)
 			cap := wmodel.NewCap(
 				geo.NewCapFromS2Cap(
 					geo.GetCap(lat, lng, radius),
@@ -61,12 +64,12 @@ func GetGeoCap(app application.Application) func(*gin.Context) {
 	}
 }
 
-func GetGeoCellsConvex(app application.Application) func(*gin.Context) {
+func GetGeoCellsConvex(app web.ApplicationWeb) func(*gin.Context) {
 	return func(ctx *gin.Context) {
-		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", 0)
-			lng := QueryFloat64(ctx, "lng", 0)
-			radius := QueryFloat64(ctx, "radius", 10)
+		cweb.H(app, ctx, func(logger clogger.Logger, fcli *firestore.Client) error {
+			lat := cgin.DefaultQueryAsFloat64(ctx, "lat", 0)
+			lng := cgin.DefaultQueryAsFloat64(ctx, "lng", 0)
+			radius := cgin.DefaultQueryAsFloat64(ctx, "radius", 10)
 			_, cellsResp := geo.GetConvexCellsByLatLng2(
 				lat, lng,
 				app.IndexLevel(), radius,
@@ -83,11 +86,11 @@ func GetGeoCellsConvex(app application.Application) func(*gin.Context) {
 	}
 }
 
-func GetGeoCellsChildren(app application.Application) func(*gin.Context) {
+func GetGeoCellsChildren(app web.ApplicationWeb) func(*gin.Context) {
 	return func(ctx *gin.Context) {
-		web.H(app, ctx, func(logger slogger.Logger, dcli db.Client) error {
-			lat := QueryFloat64(ctx, "lat", 0)
-			lng := QueryFloat64(ctx, "lng", 0)
+		cweb.H(app, ctx, func(logger clogger.Logger, fcli *firestore.Client) error {
+			lat := cgin.DefaultQueryAsFloat64(ctx, "lat", 0)
+			lng := cgin.DefaultQueryAsFloat64(ctx, "lng", 0)
 			cells := geo.NewCellsFromS2Cells(
 				geo.GetCellChildren(lat, lng, app.IndexLevel()),
 			)

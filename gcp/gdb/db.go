@@ -5,8 +5,8 @@ import (
 	"strconv"
 
 	"cloud.google.com/go/firestore"
+	"github.com/suzuito/common-go/werror"
 	"github.com/suzuito/wikipedia-on-map-go/entity/model"
-	"github.com/suzuito/wikipedia-on-map-go/werror"
 	"google.golang.org/api/iterator"
 )
 

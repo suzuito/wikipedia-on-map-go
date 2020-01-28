@@ -2,29 +2,32 @@ package application
 
 import (
 	"context"
+	"os"
+	"strings"
 
-	"github.com/suzuito/wikipedia-on-map-go/entity/db"
-	"github.com/suzuito/wikipedia-on-map-go/env"
-	"github.com/suzuito/wikipedia-on-map-go/slogger"
+	env "github.com/suzuito/common-env"
 )
 
-type Application interface {
-	DBClient(ctx context.Context) (db.Client, error)
-	Logger(ctx context.Context) slogger.Logger
+type ApplicationBase interface {
 	IndexLevel() int
+	AllowedOrigins() []string
 }
 
-type ApplicationBase struct {
+type ApplicationBaseImpl struct {
 	indexLevel int
 }
 
-func NewApplicationBase() (*ApplicationBase, error) {
+func NewApplicationBaseImpl(ctx context.Context) (*ApplicationBaseImpl, error) {
 	indexLevel := env.GetenvAsInt("INDEX_LEVEL", 15)
-	return &ApplicationBase{
+	return &ApplicationBaseImpl{
 		indexLevel: indexLevel,
 	}, nil
 }
 
-func (a *ApplicationBase) IndexLevel() int {
+func (a *ApplicationBaseImpl) IndexLevel() int {
 	return a.indexLevel
+}
+
+func (a *ApplicationBaseImpl) AllowedOrigins() []string {
+	return strings.Split(os.Getenv("ALLOWED_ORIGINS"), ",")
 }
