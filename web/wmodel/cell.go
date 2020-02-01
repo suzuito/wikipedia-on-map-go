@@ -23,6 +23,8 @@ type Cell struct {
 	Latitude  Interval `json:"latitude"`
 	Longitude Interval `json:"longitude"`
 	Level     int      `json:"level"`
+	Center    LatLng   `json:"center"`
+	BoundLoop *Loop    `json:"boundLoop"`
 }
 
 func NewCell(
@@ -33,6 +35,8 @@ func NewCell(
 		Latitude:  *NewInterval(&c.Latitude),
 		Longitude: *NewInterval(&c.Longitude),
 		Level:     c.Level,
+		Center:    *NewLatLng(&c.Center),
+		BoundLoop: NewLoop(c.BoundLoop),
 	}
 }
 

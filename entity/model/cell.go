@@ -15,6 +15,8 @@ type Cell struct {
 	Latitude  Interval
 	Longitude Interval
 	Level     int
+	Center    LatLng
+	BoundLoop *Loop
 }
 
 // LatLng ...

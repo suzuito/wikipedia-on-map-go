@@ -58,6 +58,7 @@ func s2geo(app Application, root *gin.Engine) {
 
 func geo(app Application, root *gin.Engine) {
 	groupGeo := root.Group("geo")
+	groupGeo.GET("cells", router.GetCells(app))
 	groupGeo.GET("cells/children", router.GetGeoCellsChildren(app))
 	groupGeo.GET("cells/convex", router.GetGeoCellsConvex(app))
 	groupGeo.GET("caps", router.GetGeoCap(app))

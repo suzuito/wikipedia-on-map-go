@@ -128,6 +128,9 @@ func getCellParent(c *s2.Cell, lv int) *[]*s2.Cell {
 
 func NewCellFromS2Cell(c *s2.Cell) *model.Cell {
 	ret := model.Cell{}
+	ret.Center = *NewLatLngFromS2LatLng(s2.LatLngFromPoint(
+		c.Center(),
+	))
 	cellID := c.ID()
 	rect := c.RectBound()
 	lo := rect.Lo()
@@ -141,6 +144,7 @@ func NewCellFromS2Cell(c *s2.Cell) *model.Cell {
 		Lo: lo.Lng.Degrees(),
 		Hi: hi.Lng.Degrees(),
 	}
+	ret.BoundLoop = NewLoopFromS2Cell(c)
 	ret.Level = c.Level()
 	return &ret
 }
@@ -169,4 +173,21 @@ func NewCapFromS2Cap(c *s2.Cap) *model.Cap {
 		),
 		Radius: angleToKm(c.Radius()),
 	}
+}
+
+func getCellsChildren(face, lv int) *[]*s2.Cell {
+	cellIDFace := s2.CellIDFromFace(face)
+	cellIDBegin := cellIDFace.ChildBeginAtLevel(lv)
+	cellIDEnd := cellIDFace.ChildEndAtLevel(lv)
+	returned := []*s2.Cell{}
+	for cellID := cellIDBegin; cellID != cellIDEnd; cellID = cellID.Next() {
+		cell := s2.CellFromCellID(cellID)
+		returned = append(returned, &cell)
+	}
+	return &returned
+}
+
+func GetCellsChildren(face, lv int) *[]*model.Cell {
+	cells := getCellsChildren(face, lv)
+	return NewCellsFromS2Cells(cells)
 }
