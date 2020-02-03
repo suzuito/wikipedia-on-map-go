@@ -146,6 +146,7 @@ func NewCellFromS2Cell(c *s2.Cell) *model.Cell {
 	}
 	ret.BoundLoop = NewLoopFromS2Cell(c)
 	ret.Level = c.Level()
+	ret.Face = c.Face()
 	return &ret
 }
 

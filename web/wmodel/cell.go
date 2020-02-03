@@ -25,6 +25,7 @@ type Cell struct {
 	Level     int      `json:"level"`
 	Center    LatLng   `json:"center"`
 	BoundLoop *Loop    `json:"boundLoop"`
+	Face      int      `json:"face"`
 }
 
 func NewCell(
@@ -37,6 +38,7 @@ func NewCell(
 		Level:     c.Level,
 		Center:    *NewLatLng(&c.Center),
 		BoundLoop: NewLoop(c.BoundLoop),
+		Face:      c.Face,
 	}
 }
 

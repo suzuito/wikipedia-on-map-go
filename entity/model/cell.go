@@ -17,6 +17,7 @@ type Cell struct {
 	Level     int
 	Center    LatLng
 	BoundLoop *Loop
+	Face      int
 }
 
 // LatLng ...
